@@ -48,7 +48,7 @@ public class Cliente {
     private void createAndShowGUI(String enderecoServidor, int numeroPorta, String nomeCliente) {
         this.nomeCliente = nomeCliente;
 
-        JFrame frame = new JFrame("Cliente de Chat");
+        JFrame frame = new JFrame(this.nomeCliente);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JPanel contentPane = new JPanel(new BorderLayout());
@@ -88,6 +88,7 @@ public class Cliente {
                 try {
                     String mensagemRecebida;
                     while ((mensagemRecebida = entrada.readLine()) != null) {
+                        System.out.println("mensagemRecebida: " + mensagemRecebida);
                         appendToChatArea(mensagemRecebida);
                     }
                 } catch (IOException e) {
@@ -104,7 +105,14 @@ public class Cliente {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                String formattedMessage = "[" + nomeCliente + "]: " + message + "\n";
+                // TODO: nomeCliente deve ser o nome de quem enviou a mensagem
+                String formattedMessage = "";
+                if(message.contains("&")){
+                    String[] splitted = message.split("&");
+                    formattedMessage = "[" + splitted[0] + "]: " + splitted[1] + "\n";
+                } else {
+                    formattedMessage = "[" + nomeCliente + "]: " + message + "\n";
+                }
                 chatTextArea.append(formattedMessage);
                 chatTextArea.setCaretPosition(chatTextArea.getDocument().getLength());
             }
@@ -114,7 +122,8 @@ public class Cliente {
     private void sendMessage() {
         String message = inputField.getText();
         appendToChatArea(message);
-
+        
+        message = nomeCliente + "&" + message;
         writer.println(message);
         writer.flush();
 
