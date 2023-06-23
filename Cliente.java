@@ -1,18 +1,5 @@
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
 import java.awt.Insets;
-
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -20,12 +7,22 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 public class Cliente {
     private JTextArea chatTextArea;
     private JTextField inputField;
     private PrintWriter writer;
     private String nomeCliente;
+    private Set<String> participantesOnline;
 
     public static void main(String[] args) {
         if (args.length != 3) {
@@ -48,6 +45,7 @@ public class Cliente {
     // Cria e exibe a interface gráfica do cliente
     private void createAndShowGUI(String enderecoServidor, int numeroPorta, String nomeCliente) {
         this.nomeCliente = nomeCliente;
+        this.participantesOnline = new HashSet<>();
 
         JFrame frame = new JFrame(this.nomeCliente);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -56,7 +54,6 @@ public class Cliente {
 
         chatTextArea = new JTextArea();
         chatTextArea.setEditable(false);
-        chatTextArea.setMargin(new Insets(10, 10, 10, 10));
         JScrollPane scrollPane = new JScrollPane(chatTextArea);
         contentPane.add(scrollPane, BorderLayout.CENTER);
 
@@ -91,16 +88,55 @@ public class Cliente {
                     String mensagemRecebida;
                     while ((mensagemRecebida = entrada.readLine()) != null) {
                         System.out.println("mensagemRecebida: " + mensagemRecebida);
-                        appendToChatArea(mensagemRecebida);
+                        if (mensagemRecebida.startsWith("ONLINE:")) {
+                            String participante = mensagemRecebida.substring("ONLINE:".length());
+                            participantesOnline.add(participante);
+                            printParticipantesOnline();
+                        } else if (mensagemRecebida.startsWith("OFFLINE:")) {
+                            String participante = mensagemRecebida.substring("OFFLINE:".length());
+                            participantesOnline.remove(participante);
+                            printParticipantesOnline();
+                        } else {
+                            appendToChatArea(mensagemRecebida);
+                        }
                     }
                 } catch (IOException e) {
                     System.err.println("Erro ao receber mensagem do servidor: " + e.getMessage());
                 }
             }).start();
+
+            sendPresenceNotification(); // Envia uma notificação de presença ao servidor
+
         } catch (IOException e) {
             System.err.println("Não foi possível conectar ao servidor " + enderecoServidor + " na porta " + numeroPorta);
             System.exit(1);
         }
+    }
+
+    // Envia uma mensagem do cliente para o servidor
+    private void sendMessage() {
+        String message = inputField.getText();
+        appendToChatArea(message);
+
+        writer.println(message);
+        writer.flush();
+
+        inputField.setText("");
+    }
+
+    // Envia uma notificação de presença ao servidor a cada 5 segundos
+    private void sendPresenceNotification() {
+        new Thread(() -> {
+            while (true) {
+                writer.println("PRESENCE:" + nomeCliente);
+                writer.flush();
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     // Adiciona uma mensagem à área de chat do cliente
@@ -108,29 +144,25 @@ public class Cliente {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                // TODO: nomeCliente deve ser o nome de quem enviou a mensagem
-                String formattedMessage = "";
-                if(message.contains("&")){
-                    String[] splitted = message.split("&");
-                    formattedMessage = "[" + splitted[0] + "]: " + splitted[1] + "\n";
-                } else {
-                    formattedMessage = "[" + nomeCliente + "]: " + message + "\n";
-                }
+                String formattedMessage = "[" + message + "]\n"; // Adiciona o nome do remetente entre colchetes
                 chatTextArea.append(formattedMessage);
                 chatTextArea.setCaretPosition(chatTextArea.getDocument().getLength());
             }
         });
     }
 
-    // Envia uma mensagem do cliente para o servidor
-    private void sendMessage() {
-        String message = inputField.getText();
-        appendToChatArea(message);
-        
-        message = nomeCliente + "&" + message;
-        writer.println(message);
-        writer.flush();
 
-        inputField.setText("");
+    private void printParticipantesOnline() {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                chatTextArea.setText("");
+                chatTextArea.append("Participantes online:\n");
+                for (String participante : participantesOnline) {
+                    chatTextArea.append(participante + "\n");
+                }
+                chatTextArea.append("\n");
+            }
+        });
     }
 }

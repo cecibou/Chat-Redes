@@ -5,16 +5,13 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JScrollBar;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Servidor {
 
     private ArrayList<PrintWriter> clientOutputStreams;
-    private JTextArea chatTextArea;
-    private JScrollPane scrollPane;
+    private Set<String> participantesOnline;
 
     public static void main(String[] args) {
         if (args.length != 1) {
@@ -29,6 +26,7 @@ public class Servidor {
     // Inicia o servidor na porta especificada
     public void start(int port) {
         clientOutputStreams = new ArrayList<>();
+        participantesOnline = new HashSet<>();
 
         try {
             ServerSocket serverSocket = new ServerSocket(port);
@@ -44,6 +42,14 @@ public class Servidor {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void printParticipantesOnline() {
+        System.out.println("Participantes online:");
+        for (String participante : participantesOnline) {
+            System.out.println(participante);
+        }
+        System.out.println();
     }
 
     private class ClientHandler implements Runnable {
@@ -78,6 +84,7 @@ public class Servidor {
                     clientOutputStreams.remove(writer);
                     clientSocket.close();
                     System.out.println("Conexão encerrada com " + clientSocket.getInetAddress());
+                    printParticipantesOnline(); // Exibe a lista de participantes online após a desconexão
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -95,3 +102,4 @@ public class Servidor {
         }
     }
 }
+
