@@ -45,6 +45,7 @@ public class Cliente {
         });
     }
 
+    // Cria e exibe a interface gráfica do cliente
     private void createAndShowGUI(String enderecoServidor, int numeroPorta, String nomeCliente) {
         this.nomeCliente = nomeCliente;
 
@@ -77,6 +78,7 @@ public class Cliente {
         connectToServer(enderecoServidor, numeroPorta);
     }
 
+    // Conecta o cliente ao servidor usando o endereço IP e número da porta fornecidos
     private void connectToServer(String enderecoServidor, int numeroPorta) {
         try {
             Socket socketCliente = new Socket(enderecoServidor, numeroPorta);
@@ -101,6 +103,7 @@ public class Cliente {
         }
     }
 
+    // Adiciona uma mensagem à área de chat do cliente
     private void appendToChatArea(String message) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -119,6 +122,7 @@ public class Cliente {
         });
     }
 
+    // Envia uma mensagem do cliente para o servidor
     private void sendMessage() {
         String message = inputField.getText();
         appendToChatArea(message);

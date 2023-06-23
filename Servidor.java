@@ -26,6 +26,7 @@ public class Servidor {
         new Servidor().start(port);
     }
 
+    // Inicia o servidor na porta especificada
     public void start(int port) {
         clientOutputStreams = new ArrayList<>();
 
@@ -83,6 +84,7 @@ public class Servidor {
             }
         }
 
+        // Envia a mensagem para todos os outros clientes conectados
         private void sendToOtherClients(String message) {
             for (PrintWriter client : clientOutputStreams) {
                 if (client != writer) {
